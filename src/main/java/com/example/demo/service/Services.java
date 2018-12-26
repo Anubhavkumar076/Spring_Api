@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 import com.example.demo.model.*;;
 
 @Service
-public class Services {
+public class Services  {
 	
 	 @Autowired  
 	    JdbcTemplate jdbc; 
@@ -46,7 +46,9 @@ public class Services {
 				            return list;  
 				         }    	  
 				      });
+		 
 		return cart_session;
+		
 	 }
 	 
 	 
@@ -129,7 +131,7 @@ public class Services {
 	 public List<Orders> getOrders(int user_id)
 	 {
 		 
-		 List<Orders> myorders= jdbc.query("SELECT O.order_id, O.i_date, O.cod_charge,O.fast_delivery, O.coupon_amount,O.status, OB.book_id, B.thumb, B.price, BP.shipping_cost, BP.handling_charge FROM orders as O INNER JOIN order_books as OB on O.order_id=OB.order_id INNER JOIN books as B on B.book_id=OB.book_id INNER JOIN book_pricing_new as BP on BP.book_id=OB.book_id where O.user_id="+user_id+" GROUP BY O.order_id"
+		 List<Orders> myorders= jdbc.query("SELECT O.order_id, O.i_date, O.cod_charge,O.payusing, O.fast_delivery, O.coupon_amount,O.status, OB.book_id, B.thumb, B.price, BP.shipping_cost, BP.handling_charge FROM orders as O INNER JOIN order_books as OB on O.order_id=OB.order_id INNER JOIN books as B on B.book_id=OB.book_id INNER JOIN book_pricing_new as BP on BP.book_id=OB.book_id where O.user_id="+user_id+" GROUP BY O.order_id"
 				  ,new ResultSetExtractor<List<Orders>>(){
 				         
 				         public List<Orders> extractData(
@@ -141,6 +143,7 @@ public class Services {
 				            	Orders order=new Orders();
 				            	order.setBook_img(rs.getString("thumb"));
 				            	order.setCod(rs.getInt("cod_charge"));
+				            	order.setPayusing(rs.getString("payusing"));
 				            	order.setCoupon(rs.getInt("coupon_amount"));
 				            	order.setMrp(rs.getInt("price"));
 				            	order.setI_date(rs.getLong("i_date"));
@@ -158,6 +161,103 @@ public class Services {
 		return myorders;
 	 }
 	 
+	 //***********************************FOR ORDER DETAILS**********************************************************************
 	 
+	 public List<OrderDetails> getOrderDetails(int order_id)
+	 {
+		 
+		 List<OrderDetails> orderdetails= jdbc.query("SELECT OB.book_id, OB.book_inv_id,O.coupon_amount,O.cod_charge, OB.order_book_id,O.order_id, O.i_date, O.amount, O.payusing, O.fast_delivery, OB.qty ,O.no_of_book, O.shipping_add_id,B.shipping_cost, B.title, B.price, B.thumb, I.book_condition,BI.handling_charge,U.rec_name,U.pincode,U.phone_no,U.address,U.landmark,C.country,Ci.city,S.state_name FROM orders as O INNER JOIN order_books as OB on O.order_id=OB.order_id INNER JOIN books as B on B.book_id=OB.book_id INNER JOIN book_pricing_new as BI INNER JOIN useraddresses as U on U.address_id=O.shipping_add_id INNER JOIN countries as C on C.id=U.country_id INNER JOIN cities as Ci on Ci.city_id=U.city_id INNER JOIN states as S ON S.state_id=U.state_id INNER JOIN bookinventory as I on OB.book_inv_id=I.book_inv_id where O.order_id="+order_id+" GROUP BY OB.book_inv_id"
+				  ,new ResultSetExtractor<List<OrderDetails>>(){
+				         
+				         public List<OrderDetails> extractData(
+				            ResultSet rs) throws SQLException, DataAccessException {
+				            
+				            List<OrderDetails> details = new ArrayList<OrderDetails>();  
+				            while(rs.next()){  
+				            	
+				            	OrderDetails order_details=new OrderDetails();
+				            	order_details.setBook_id(rs.getInt("book_id"));
+				            	order_details.setBook_inv_id(rs.getInt("book_inv_id"));
+				            	order_details.setCoupon_amount(rs.getInt("coupon_amount"));
+				            	order_details.setCod_charge(rs.getInt("cod_charge"));
+				            	order_details.setOrder_book_id(rs.getInt("order_book_id"));
+				            	order_details.setOrder_id(rs.getInt("order_id"));
+				            	order_details.setI_date(rs.getLong("i_date"));
+				            	order_details.setAmount(rs.getInt("amount"));
+				            	order_details.setPayusing(rs.getString("payusing"));
+				            	order_details.setFast_delivery(rs.getInt("fast_delivery"));
+				            	order_details.setQty(rs.getInt("qty"));
+				            	order_details.setNo_of_book(rs.getInt("no_of_book"));
+				            	order_details.setShipping_cost(rs.getInt("shipping_cost"));
+				            	order_details.setTitle(rs.getString("title"));
+				            	order_details.setPrice(rs.getInt("price"));
+				            	order_details.setThumb(rs.getString("thumb"));
+				            	order_details.setBook_condition(rs.getString("book_condition"));
+				            	order_details.setHandling_charge(rs.getInt("handling_charge"));
+				            	order_details.setRec_name(rs.getString("rec_name"));
+				            	order_details.setPincode(rs.getDouble("pincode"));
+				            	order_details.setPhone_no(rs.getDouble("phone_no"));
+				            	order_details.setAddress(rs.getString("address"));
+				            	order_details.setLandmark(rs.getString("landmark"));
+				            	order_details.setCountry(rs.getString("country"));
+				            	order_details.setCity(rs.getString("city"));
+				            	order_details.setState_name(rs.getString("state_name"));
+				            	
+				            	
+				            	details.add(order_details);
+				            }  
+				            return details;  
+				         }    	  
+				      });
+		return orderdetails;
+	 }
+	 
+	 
+	//*********************************INSERT ADDRESS***************************************
+		 public void addAddress(int user_id,String rec_name, int pincode,String address,String landmark, String state,String city, long phone_no)
+		 {
+			 
+			 String sqlInsert = "INSERT INTO useraddresses (user_id,rec_name,title,pincode,address,landmark,country_id,state_id,city_id,phone_no,address_type) "
+			 		+ "SELECT '"+user_id+"','"+rec_name+"','  ','"+pincode+"','"+address+"','"+landmark+"','101',states.state_id,cities.city_id,'"+phone_no+"','0'"
+			 		+ "FROM cities INNER JOIN states where cities.city='"+city+"' AND states.state_name='"+state+"' LIMIT 1";
+			        jdbc.update(sqlInsert);
+		 }
+		 
+		 
+	 //*****************************FETCH OLD PASSWORD**********************************************************
+		 
+		 public List<OldPassword> getOldPassword(int id)
+		 {	 
+			 List<OldPassword> old_password= jdbc.query("SELECT password FROM users where id="+id
+				  ,new ResultSetExtractor<List<OldPassword>>(){
+				         
+				         public List<OldPassword> extractData(
+				            ResultSet rs) throws SQLException, DataAccessException {
+				            
+				            List<OldPassword> list = new ArrayList<OldPassword>();  
+				            while(rs.next()){  
+				            	
+				            	OldPassword oldpassword=new OldPassword();
+				            	oldpassword.setPassword(rs.getString("password"));
+				            	
+				            	list.add(oldpassword);
+				            }  
+				            return list;  
+				         }    	  
+				      });
+		return old_password;
+	 }
+		 
+		 
+	 //*******************************INSERT OLD PASSWORD**************************************
+		
+		 public void changePass(int id,String pass)
+		 {
+			 
+			 String sqlInsert = "UPDATE users SET users.password='"+pass+"' WHERE id="+id ;
+			        jdbc.update(sqlInsert);
+		 }
+		 
+
 
 }

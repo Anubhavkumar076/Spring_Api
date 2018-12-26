@@ -9,6 +9,13 @@ public class Orders {
 	private int mrp;
 	private int shipping;
 	private int cod;
+	private String payusing;
+	public String getPayusing() {
+		return payusing;
+	}
+	public void setPayusing(String payusing) {
+		this.payusing = payusing;
+	}
 	private int coupon;
 	private int status;
 	private int fast_delivery;
