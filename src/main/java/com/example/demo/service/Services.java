@@ -1,4 +1,6 @@
 package com.example.demo.service;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,7 +26,7 @@ public class Services  {
 	 public List<CartSessionInfo> getCartDetails(int userid)
 	 {
 		 
-		 List<CartSessionInfo> cart_session= jdbc.query("SELECT DISTINCT U.user_id, B.book_id, B.price, B.title, B.thumb, B.author, B.qty, P.shipping_cost, P.handling_charge from cart_session as U INNER join books as B on B.book_id=U.book_id INNER JOIN book_pricing_new as P on P.book_id=U.book_id WHERE U.user_id="+userid+"  GROUP BY B.book_id"
+		 List<CartSessionInfo> cart_session= jdbc.query("SELECT U.user_id, B.book_id, B.price, B.title, B.thumb, B.author, COUNT(U.book_id) as qty, P.shipping_cost, P.handling_charge from cart_session as U INNER join books as B on B.book_id=U.book_id INNER JOIN book_pricing_new as P on P.book_id=U.book_id WHERE U.user_id='"+userid+"' GROUP BY B.book_id"
 				  ,new ResultSetExtractor<List<CartSessionInfo>>(){
 				         
 				         public List<CartSessionInfo> extractData(
@@ -50,6 +52,36 @@ public class Services  {
 		return cart_session;
 		
 	 }
+	 
+	 
+	//*******************************For Cart Details*****************************************************************
+		 public List<Books> getAllBooks()
+		 {
+			 
+			 List<Books> book_detail= jdbc.query("SELECT book_id,thumb,title,price,author from books"
+					  ,new ResultSetExtractor<List<Books>>(){
+					         
+					         public List<Books> extractData(
+					            ResultSet rs) throws SQLException, DataAccessException {
+					            
+					            List<Books> list = new ArrayList<Books>();  
+					            while(rs.next()){  
+					            	
+					            	Books book=new Books();
+					            	book.setBook_id(rs.getInt("book_id"));
+					            	book.setThumb(rs.getString("thumb"));
+					            	book.setTitle(rs.getString("title"));
+					            	book.setPrice(rs.getString("price"));
+					            	book.setAuthor(rs.getString("author"));
+					            	list.add(book);
+					            }  
+					            return list;  
+					         }    	  
+					      });
+			 
+			return book_detail;
+			
+		 }
 	 
 	 
 	 //**************************For Full ProductView***************************************************************
@@ -257,6 +289,110 @@ public class Services  {
 			 String sqlInsert = "UPDATE users SET users.password='"+pass+"' WHERE id="+id ;
 			        jdbc.update(sqlInsert);
 		 }
+		 
+		//***********************************CART SESSION ENTRY SERVICE*************************************
+		 public void insertCartValue(int user_id,int book_id)
+		 {
+			 
+			 String sqlInsert = "INSERT INTO cart_session(user_id,book_id) VALUES ('"+user_id+"','"+book_id+"')";
+			        jdbc.update(sqlInsert);
+		 }
+		 
+		 
+		//*********************************UPDATE ADDRESS***************************************
+		 public void updateAddress(int address_id,int user_id,String rec_name, int pincode,String address,String landmark, int state_id,int city_id, long phone_no)
+		 {
+			 
+			 String sqlInsert = "UPDATE useraddresses SET user_id='"+user_id+"',rec_name='"+rec_name+"',pincode='"+pincode+"',address='"+address+"',landmark='"+landmark+"',state_id='"+state_id+"',city_id='"+city_id+"',phone_no='"+phone_no+"' where address_id="+address_id+"";
+			        jdbc.update(sqlInsert);
+		 }
+		 
+		 
+		//*********************************REMOVE BOOKS SERVICE***************************************
+		 public void removeBooks(int book_id,int user_id)
+		 {
+			 
+			 String sqlInsert = "DELETE FROM cart_session where book_id="+book_id+" AND user_id="+user_id+"";
+			        jdbc.update(sqlInsert);
+		 }
+		 
+		 //*********************ADD WISHLIST**************************************************
+		 public void addWishlist(int book_id,int user_id)
+		 {
+			 String sqlInsert = "INSERT INTO wishlists(user_id,book_id) VALUES ('"+user_id+"','"+book_id+"')";
+			 jdbc.update(sqlInsert);
+			 String sqlInsert1 = "DELETE FROM cart_session where book_id="+book_id+" AND user_id="+user_id+"";
+			        jdbc.update(sqlInsert1);
+		 }
+		 
+		//*********************************REMOVE BOOK By MINUS SERVICE***************************************
+		 public void removeBook(int book_id,int user_id)
+		 {
+			 
+			 String sqlInsert = "DELETE FROM cart_session where book_id="+book_id+" AND user_id="+user_id+" LIMIT 1";
+			        jdbc.update(sqlInsert);
+		 }
+		 
+		 //***********************************SignIn*********************************************
+		 public List<SignIn> userSignin(String user_id)
+		 { 
+			 List<SignIn> signIn= jdbc.query("SELECT id, first_name, mobile, email, alternative_email, avatar, mobile, password FROM `users` WHERE email= '"+user_id+"'  OR mobile='"+user_id+"' LIMIT 1"
+					  ,new ResultSetExtractor<List<SignIn>>(){
+					         
+					         public List<SignIn> extractData(
+					            ResultSet rs) throws SQLException, DataAccessException {
+					            
+					            List<SignIn> list = new ArrayList<SignIn>();  
+					            while(rs.next()){  
+					            	SignIn signin=new SignIn();
+					            	signin.setEmailid(rs.getString("email"));
+					            	signin.setPassword(rs.getString("password"));
+//					            	try {
+//										signin.setPassword(getMD5(rs.getString("password")));
+//									} catch (NoSuchAlgorithmException e) {
+//										// TODO Auto-generated catch block
+//										e.printStackTrace();
+//									}
+					            	signin.setFirst_name(rs.getString("first_name"));
+					            	signin.setAlternative_email(rs.getString("alternative_email"));
+					            	signin.setId(rs.getInt("id"));
+					            	signin.setMobile(rs.getLong("mobile"));
+					            	signin.setAvatar(rs.getString("avatar"));
+					            	list.add(signin);
+					            }  
+					            return list;  
+					         }    	  
+					      });
+			 
+			return signIn;
+		 }
+		 
+		 
+		 //*************************************Google Signin*************************************************
+		 
+		 public void googleSignIn(String email,String first_name,String last_name)
+		 {
+			 
+			 String sqlInsert = "INSERT INTO users (email, first_name, last_name,password,	user_role_id,communication_address,mobile,profile_percentage,i_date,i_by,u_date,u_by,registered_date) SELECT * FROM (SELECT '"+email+"', '"+first_name+"', '"+last_name+"','Password','0','Your Address','0000000000','1','1111 ','111 ','00','000','0000') AS tmp WHERE NOT EXISTS ( SELECT email FROM users WHERE email = '"+email+"' ) LIMIT 1";
+			        jdbc.update(sqlInsert);
+			        
+			        
+		 }
+		 
+//		 public static String getMD5(String data) throws NoSuchAlgorithmException
+//		    { 
+//		MessageDigest messageDigest=MessageDigest.getInstance("MD5");
+//
+//		        messageDigest.update(data.getBytes());
+//		        byte[] digest=messageDigest.digest();
+//		        StringBuffer sb = new StringBuffer();
+//		        for (byte b : digest) {
+//		            sb.append(Integer.toHexString((int) (b & 0xff)));
+//		        }
+//		        return sb.toString();
+//		    }
+//		 
+		 
 		 
 
 
