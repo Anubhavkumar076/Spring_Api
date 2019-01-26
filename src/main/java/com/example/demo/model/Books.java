@@ -9,9 +9,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+
+
 
 @Entity
 @Table(name="books")
+@Document(indexName="Books", type="Books")
 public class Books {
 	
 	@Id

@@ -378,22 +378,135 @@ public class Services  {
 			        
 			        
 		 }
+		 //user_id,amount,no_of_book,status,payusing,biiling_add_id,shipping_add_id,i_by,i_date,u_by,u_date,handling_charge
 		 
-//		 public static String getMD5(String data) throws NoSuchAlgorithmException
-//		    { 
-//		MessageDigest messageDigest=MessageDigest.getInstance("MD5");
-//
-//		        messageDigest.update(data.getBytes());
-//		        byte[] digest=messageDigest.digest();
-//		        StringBuffer sb = new StringBuffer();
-//		        for (byte b : digest) {
-//		            sb.append(Integer.toHexString((int) (b & 0xff)));
-//		        }
-//		        return sb.toString();
-//		    }
-//		 
+		 //********************************ORDER PLACED*****************************************************
+//		 public void orderPlaced(int user_id,int amount,int no_of_book,int status,String payusing,int biiling_add_id,int shipping_add_id,String i_by,String i_date, String u_by,String u_date,int handling_charge)
+//		 {
+////			 String sqlInsert ="INSERT INTO orders (user_id,amount,no_of_book,status,payusing,biiling_add_id,shipping_add_id,i_by,i_date,u_by,u_date,handling_charge) VALUES ('"+user_id+"','"+amount+"','"+no_of_book+"','"+status+"','"+payusing+"','"+biiling_add_id+"','"+shipping_add_id+"','"+i_by+"','"+i_date+"','"+u_by+"','"+u_date+"','"+handling_charge+"')";
+////			 jdbc.update(sqlInsert);
+////			 
+////			 String sqlDelete = "DELETE FROM cart_session where user_id="+user_id+"";
+////			        jdbc.update(sqlDelete);
+//			        
+//		 }
+		 
+		 public List<Orders> orderPlaced(int user_id,int amount,int no_of_book,int status,String payusing,int biiling_add_id,int shipping_add_id,String i_by,String i_date, String u_by,String u_date,int handling_charge)
+		 {
+			 
+			 String sqlInsert ="INSERT INTO orders (user_id,amount,no_of_book,status,payusing,biiling_add_id,shipping_add_id,i_by,i_date,u_by,u_date,handling_charge) VALUES ('"+user_id+"','"+amount+"','"+no_of_book+"','"+status+"','"+payusing+"','"+biiling_add_id+"','"+shipping_add_id+"','"+i_by+"','"+i_date+"','"+u_by+"','"+u_date+"','"+handling_charge+"')";
+			 jdbc.update(sqlInsert);
+			 
+			 String sqlDelete = "DELETE FROM cart_session where user_id="+user_id+"";
+	        jdbc.update(sqlDelete);
+			 List<Orders> orders= jdbc.query("SELECT order_id FROM orders WHERE user_id='"+user_id+"' ORDER BY order_id DESC LIMIT 1"
+					  ,new ResultSetExtractor<List<Orders>>(){
+					         
+					         public List<Orders> extractData(
+					            ResultSet rs) throws SQLException, DataAccessException {
+					            
+					            List<Orders> list = new ArrayList<Orders>();  
+					            while(rs.next()){  
+					            	
+					            	Orders order=new Orders();
+					            	order.setOrder_id(rs.getInt("order_id"));
+					            	list.add(order);
+					            }  
+					            return list;  
+					         }    	  
+					      });
+			return orders;
+		 }
 		 
 		 
+		 //*****************************************GET ORDER ID***************************************************
+		 public List<Orders> getOrderId(int user_id)
+		 {	 
+			 List<Orders> orders= jdbc.query("SELECT order_id FROM orders WHERE user_id='"+user_id+"' ORDER BY order_id DESC LIMIT 1"
+				  ,new ResultSetExtractor<List<Orders>>(){
+				         
+				         public List<Orders> extractData(
+				            ResultSet rs) throws SQLException, DataAccessException {
+				            
+				            List<Orders> list = new ArrayList<Orders>();  
+				            while(rs.next()){  
+				            	
+				            	Orders order=new Orders();
+				            	order.setOrder_id(rs.getInt("order_id"));
+				            	list.add(order);
+				            }  
+				            return list;  
+				         }    	  
+				      });
+		return orders;
+	 }
 
+
+		
+		 //*****************************************INSERTION IN ORDER BOOKS***************************************************
+		 public void orderBooks(int order_id,int address_id, int book_id, int qty, String email) {
+			 String sqlInsert ="INSERT into order_books(order_id,book_id,book_inv_id,qty,racks,handling_charge) SELECT '"+order_id+"', '"+book_id+"', bookinventory.book_inv_id, '"+qty+"', bookinventory.rack_no, bookinventory.handling_charge FROM bookinventory WHERE bookinventory.book_id="+book_id+" LIMIT 1";
+			 jdbc.update(sqlInsert);
+			 
+			 String sqlAddress="INSERT INTO order_address (order_id,rec_name,email,pincode,address,landmark,city,country,state,phone,i_date) SELECT '"+order_id+"', useraddresses.rec_name,"+email+",useraddresses.pincode, useraddresses.address, useraddresses.landmark,cities.city,countries.country, states.state_name,useraddresses.phone_no,'11111' FROM useraddresses INNER JOIN states INNER JOIN countries INNER JOIN cities WHERE useraddresses.address_id='"+address_id+"' AND states.state_id=useraddresses.state_id AND cities.city_id=useraddresses.city_id AND countries.id=useraddresses.country_id";
+			 jdbc.update(sqlAddress);
+			}
+
+		 
+			//*******************************For FETCH WISHLIST*****************************************************************
+		 public List<Wishlist> getWishlist(int user_id)
+		 {
+			 
+			 List<Wishlist> wishlist= jdbc.query("SELECT W.book_id,W.user_id,W.wl_id,B.price,B.title,B.thumb,B.author,C.name FROM wishlists as W INNER JOIN books as B on W.book_id=B.book_id INNER JOIN categories as C ON C.id=B.category WHERE W.user_id='"+user_id+"'"
+					  ,new ResultSetExtractor<List<Wishlist>>(){
+					         
+					         public List<Wishlist> extractData(
+					            ResultSet rs) throws SQLException, DataAccessException {
+					            
+					            List<Wishlist> list = new ArrayList<Wishlist>();  
+					            while(rs.next()){  
+					            	
+					            	Wishlist wishlistData=new Wishlist();
+					            	wishlistData.setWl_id(rs.getInt("wl_id"));
+					            	wishlistData.setAuthor(rs.getString("author"));
+					            	wishlistData.setBook_id(rs.getInt("book_id"));
+					            	wishlistData.setCategory(rs.getString("name"));
+					            	wishlistData.setTitle(rs.getString("title"));
+					            	wishlistData.setPrice(rs.getInt("price"));
+					            	wishlistData.setUser_id(rs.getInt("user_id"));
+					            	wishlistData.setThumb(rs.getString("thumb"));
+					            	
+					            	list.add(wishlistData);
+					            }  
+					            return list;  
+					         }    	  
+					      });
+			 
+			return wishlist;
+			
+		 }
+
+		 	//***************insert one by one***************************************************
+		public void insertCartFromWishlist(int id, int book_id) {
+			String sqlInsert = "INSERT INTO cart_session(user_id,book_id) VALUES ('"+id+"','"+book_id+"')";
+	        jdbc.update(sqlInsert);
+	        
+	        String sqlDelete = "DELETE FROM wishlists where user_id='"+id+"' AND book_id='"+book_id+"'";
+	        jdbc.update(sqlDelete);
+			
+		}
+
+			//************************Insert into cart from wishlist******************************************8
+		public void insertallCartFromWishlist(int id) {
+			String sqlInsert= "INSERT INTO cart_session (user_id,book_id) SELECT wishlists.user_id, wishlists.book_id FROM  wishlists WHERE wishlists.user_id='"+id+"'";
+			jdbc.update(sqlInsert);
+			
+			String sqlDelete = "DELETE FROM wishlists where user_id='"+id+"'";
+	        jdbc.update(sqlDelete);
+		}
+		
+		
+		//INSERT INTO order_books (order_id,book_id,book_inv_id,qty,racks,handling_charge) SELECT '517332', '122', bookinventory.book_inv_id,'2', bookinventory.rack_no, bookinventory.handling_charge FROM bookinventory WHERE bookinventory.book_id='122'
+		 
 
 }

@@ -1,12 +1,15 @@
 package com.example.demo.controller;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +32,7 @@ import com.example.demo.model.SelectDeliveryAddress;
 import com.example.demo.model.SignIn;
 import com.example.demo.model.States;
 import com.example.demo.model.Users;
+import com.example.demo.model.Wishlist;
 import com.example.demo.repository.BookPreviewRepository;
 import com.example.demo.repository.CityRepository;
 import com.example.demo.repository.DonationRequestsRepository;
@@ -37,13 +41,15 @@ import com.example.demo.repository.UsersRepository;
 import com.example.demo.service.Services;
 
 @RestController  
-public class Controllers {
+public class Controllers {   
 
 	    @Autowired  
 	    JdbcTemplate jdbc;    
 	    
 	    @Autowired
 	    Services service;
+	    
+	    
 	    
 	    
 	    
@@ -193,7 +199,7 @@ public class Controllers {
 	    //**************************CART SESSION ENTRY************************************
 	    @PostMapping("/cart_insert/{id}/{book_id}")
 	    @Produces(MediaType.APPLICATION_XML)
-	    public void insertPassword(@PathVariable("id") int id,@PathVariable("book_id") int book_id)
+	    public void insertCart(@PathVariable("id") int id,@PathVariable("book_id") int book_id)
 	    {
 	    	service.insertCartValue(id, book_id);
 	    }
@@ -250,6 +256,73 @@ public class Controllers {
 	    	
 	    }
 	    
+	    //**************************ORDER PLACED**********************************************************
+	    @PostMapping("/order_placed/{user_id}/{amount}/{no_of_book}/{status}/{payusing}/{biiling_add_id}/{shipping_add_id}/{i_by}/{i_date}/{u_by}/{u_date}/{handling_charge}")
+	    @Produces(MediaType.APPLICATION_XML)
+	    public List<Orders> orderPlaced(@PathVariable("user_id") int user_id,@PathVariable("amount") int amount,@PathVariable("no_of_book") int no_book,@PathVariable("status") int status,@PathVariable("payusing") String payusing,@PathVariable("biiling_add_id") int billing_add_id,@PathVariable("shipping_add_id") int shipping_add_id,@PathVariable("i_by") String i_by,@PathVariable("i_date") String i_date,@PathVariable("u_by") String u_by,@PathVariable("u_date") String u_date,@PathVariable("handling_charge") int handling_charge)
+	    {
+	    	 return service.orderPlaced(user_id, amount, no_book, status, payusing, billing_add_id, shipping_add_id, i_by, i_date, u_by, u_date, handling_charge);
+	    	
+	    	 
+	    	 //INSERT INTO orders (user_id,amount,no_of_book,status,payusing,biiling_add_id,shipping_add_id,i_by,i_date,u_by,u_date,handling_charge) VALUES ('1111','259','4','0','cod','121','121','0','1','00','11','249')
+	    }
 	    
-	
+	    
+//	    //*********************** FETCH ORDER ID FOR ORDERBOOKS TABLE********************************
+//	    @GetMapping("/get_order_id/{user_id}")
+//	    @Produces(MediaType.APPLICATION_XML)
+//	    public List<Orders> getOrderId(@PathVariable("user_id") int user_id)
+//	    {
+//	    	return service.getOrderId(user_id);
+//	    	
+//	    }
+	    
+	    //*************************INSERT INTO ORDERBOOKS*******************************************
+	    @GetMapping("/order_books/{order_id}/{address_id}/{book_id}/{qty}/{email}")
+	    @Produces(MediaType.APPLICATION_XML)
+	    public void orderBooks(@PathVariable("order_id") int order_id,@PathVariable("address_id") int address_id ,@PathVariable("book_id") int book_id,@PathVariable("qty") int qty,@PathVariable("email") String email)
+	    {
+	    	service.orderBooks(order_id,address_id,book_id,qty,email);
+	    	
+	    }
+	     
+	    //String url= ConstantUrl.URL+"/order_books/"+order_id+"/"+address_id+"/"+book+"/"+quantity
+	    //**********************************FETCH ITEM FOR WISHLIST*********************************************
+	    @GetMapping("/getWishlist/{user_id}")
+	    @Produces(MediaType.APPLICATION_XML)
+	    public List<Wishlist> getWishlist(@PathVariable("user_id") int user_id)
+	    {
+	    	return service.getWishlist(user_id);
+	    	
+	    }
+	    
+	    
+	    //**************************CART SESSION ENTRY************************************
+	    @PostMapping("/wishlist_cart_insert/{id}/{book_id}")
+	    @Produces(MediaType.APPLICATION_XML)
+	    public void insertCartFromWishlist(@PathVariable("id") int id,@PathVariable("book_id") int book_id)
+	    {
+	    	service.insertCartFromWishlist(id, book_id);
+	    }
+	    
+	    
+	    //**************************CART SESSION ENTRY************************************
+	    @PostMapping("/wishlist_all_cart_insert/{id}")
+	    @Produces(MediaType.APPLICATION_XML)
+	    public void insertAllCartFromWishlist(@PathVariable("id") int id)
+	    {
+	    	service.insertallCartFromWishlist(id);
+	    }
+	    
+	    
+	    //*******************************order book and address updates*************************************
+	    
+	    
+	    
+	    
+	    
+	    
+	  
+	    
+	    
 }
